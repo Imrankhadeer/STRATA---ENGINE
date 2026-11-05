@@ -758,46 +758,6 @@ async def list_investigations(
     ]
 
 
-@router.get("/{investigation_id}", response_model=InvestigationFinding)
-async def get_investigation_report(
-    investigation_id: str,
-    db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
-):
-    """
-    Retrieves an existing investigation report by its ID.
-    """
-    db_report = db.query(InvestigationReport).filter(
-        InvestigationReport.investigation_id == investigation_id
-    ).first()
-
-    if not db_report:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Investigation report '{investigation_id}' not found.",
-        )
-
-    if db_report.tenant_id != auth.tenant_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Forbidden: Access to another tenant's investigation report is denied.",
-        )
-
-    return InvestigationFinding(
-        investigation_id=db_report.investigation_id,
-        finding_id=db_report.finding_id,
-        tenant_id=db_report.tenant_id,
-        verdict=db_report.verdict,
-        summary=db_report.summary,
-        hypotheses=[Hypothesis(**h) for h in (db_report.hypotheses or [])],
-        candidate_rules=[CandidateDetectorRule(**r) for r in (db_report.candidate_rules or [])],
-        recommended_mitigations=db_report.recommended_mitigations or [],
-        investigator_provider=db_report.investigator_provider,
-        investigator_model=db_report.investigator_model,
-        completed_at=db_report.created_at,
-    )
-
-
 @router.get("/finding/{finding_id}", response_model=List[InvestigationFinding])
 async def list_investigations_for_finding(
     finding_id: str,
@@ -843,6 +803,50 @@ async def list_investigations_for_finding(
         )
         for r in reports
     ]
+
+
+
+
+@router.get("/{investigation_id}", response_model=InvestigationFinding)
+async def get_investigation_report(
+    investigation_id: str,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Retrieves an existing investigation report by its ID.
+    """
+    db_report = db.query(InvestigationReport).filter(
+        InvestigationReport.investigation_id == investigation_id
+    ).first()
+
+    if not db_report:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Investigation report '{investigation_id}' not found.",
+        )
+
+    if db_report.tenant_id != auth.tenant_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Forbidden: Access to another tenant's investigation report is denied.",
+        )
+
+    return InvestigationFinding(
+        investigation_id=db_report.investigation_id,
+        finding_id=db_report.finding_id,
+        tenant_id=db_report.tenant_id,
+        verdict=db_report.verdict,
+        summary=db_report.summary,
+        hypotheses=[Hypothesis(**h) for h in (db_report.hypotheses or [])],
+        candidate_rules=[CandidateDetectorRule(**r) for r in (db_report.candidate_rules or [])],
+        recommended_mitigations=db_report.recommended_mitigations or [],
+        investigator_provider=db_report.investigator_provider,
+        investigator_model=db_report.investigator_model,
+        completed_at=db_report.created_at,
+    )
+
+
 
 
 from backend.schemas.investigation import FollowUpRequest, FollowUpEntry

@@ -314,46 +314,6 @@ async def search_events_historical(
     )
 
 
-@router.get("/{event_id}", response_model=EventSchema)
-async def get_event(
-    event_id: str,
-    db: Session = Depends(get_db),
-    auth: AuthContext = Depends(get_current_auth),
-):
-    """
-    Retrieves full details for a single ingested event by ID.
-    Enforces tenant isolation.
-    """
-    event = db.query(EventModel).filter(
-        EventModel.event_id == event_id,
-        EventModel.tenant_id == auth.tenant_id,
-    ).first()
-
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Event '{event_id}' not found.",
-        )
-
-    return EventSchema(
-        event_id=event.event_id,
-        schema_version=event.schema_version,
-        timestamp=event.timestamp,
-        ingested_at=event.ingested_at,
-        tenant_id=event.tenant_id,
-        app_id=event.app_id,
-        service_id=event.service_id,
-        event_type=event.event_type,
-        severity=event.severity,
-        source_resource=event.source_resource,
-        target_resource=event.target_resource,
-        trace_id=event.trace_id,
-        request_id=event.request_id,
-        attributes=event.attributes or {},
-        provenance=event.provenance or {},
-    )
-
-
 class EventTrendPoint(BaseModel):
     interval_start: str
     event_count: int
@@ -461,6 +421,48 @@ class EventFastTrackRecheckResponse(BaseModel):
     matched_rules: List[str] = Field(default_factory=list)
     findings: List[Dict[str, Any]] = Field(default_factory=list)
     latency_microseconds: float
+
+
+
+
+@router.get("/{event_id}", response_model=EventSchema)
+async def get_event(
+    event_id: str,
+    db: Session = Depends(get_db),
+    auth: AuthContext = Depends(get_current_auth),
+):
+    """
+    Retrieves full details for a single ingested event by ID.
+    Enforces tenant isolation.
+    """
+    event = db.query(EventModel).filter(
+        EventModel.event_id == event_id,
+        EventModel.tenant_id == auth.tenant_id,
+    ).first()
+
+    if not event:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Event '{event_id}' not found.",
+        )
+
+    return EventSchema(
+        event_id=event.event_id,
+        schema_version=event.schema_version,
+        timestamp=event.timestamp,
+        ingested_at=event.ingested_at,
+        tenant_id=event.tenant_id,
+        app_id=event.app_id,
+        service_id=event.service_id,
+        event_type=event.event_type,
+        severity=event.severity,
+        source_resource=event.source_resource,
+        target_resource=event.target_resource,
+        trace_id=event.trace_id,
+        request_id=event.request_id,
+        attributes=event.attributes or {},
+        provenance=event.provenance or {},
+    )
 
 
 @router.post("/{event_id}/recheck", response_model=EventFastTrackRecheckResponse)

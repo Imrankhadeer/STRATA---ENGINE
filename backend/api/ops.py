@@ -438,11 +438,89 @@ async def create_stream_ticket(auth: AuthContext = Depends(get_current_auth)):
 async def get_recent_events(
     limit: int = Query(default=50, ge=1, le=200),
     auth: AuthContext = Depends(get_current_auth),
+    db: Session = Depends(get_db),
 ):
     """
     Returns recent operational events buffered in memory for the authenticated tenant.
+    Hydrates from persistent security records if memory buffer is cold (e.g. after container spin-up).
     """
-    return ops_bus.get_buffered_events(tenant_id=auth.tenant_id, limit=limit)
+    buffered = ops_bus.get_buffered_events(tenant_id=auth.tenant_id, limit=limit)
+    if len(buffered) >= 5:
+        return buffered
+
+    audit_events = list(buffered)
+    existing_ids = {e.event_id for e in audit_events}
+
+    # 1. From DefenseAuditLogModel
+    try:
+        from backend.models import DefenseAuditLogModel
+        def_logs = db.query(DefenseAuditLogModel).filter(
+            DefenseAuditLogModel.tenant_id == auth.tenant_id
+        ).order_by(DefenseAuditLogModel.timestamp.desc()).limit(20).all()
+        for d in def_logs:
+            if d.log_id not in existing_ids:
+                audit_events.append(OpsEvent(
+                    event_id=d.log_id,
+                    timestamp=d.timestamp,
+                    component="defense",
+                    event_type=f"defense.{d.action_type}",
+                    level="info",
+                    message=f"Defense action '{d.action_id}': {d.reason or d.action_type}",
+                    tenant_id=d.tenant_id,
+                    metadata={"target_entity": d.target_entity, "executed_by": d.executed_by}
+                ))
+                existing_ids.add(d.log_id)
+    except Exception:
+        pass
+
+    # 2. From InvestigationReport
+    try:
+        from backend.models import InvestigationReport
+        invs = db.query(InvestigationReport).filter(
+            InvestigationReport.tenant_id == auth.tenant_id
+        ).order_by(InvestigationReport.created_at.desc()).limit(20).all()
+        for inv in invs:
+            eid = f"inv-audit-{inv.investigation_id[:12]}"
+            if eid not in existing_ids:
+                audit_events.append(OpsEvent(
+                    event_id=eid,
+                    timestamp=inv.created_at,
+                    component="deep-investigator",
+                    event_type="investigation.completed",
+                    level="info" if inv.verdict != "confirmed_threat" else "warn",
+                    message=f"Deep Track completed for finding {inv.finding_id}: verdict='{inv.verdict}' ({inv.investigator_model})",
+                    tenant_id=inv.tenant_id,
+                    metadata={"verdict": inv.verdict, "investigation_id": inv.investigation_id}
+                ))
+                existing_ids.add(eid)
+    except Exception:
+        pass
+
+    # 3. From DeclarativeRuleModel
+    try:
+        from backend.models import DeclarativeRuleModel
+        rules = db.query(DeclarativeRuleModel).filter(
+            DeclarativeRuleModel.tenant_id == auth.tenant_id
+        ).limit(10).all()
+        for r in rules:
+            eid = f"rule-audit-{r.rule_id[:12]}"
+            if eid not in existing_ids:
+                audit_events.append(OpsEvent(
+                    event_id=eid,
+                    timestamp=datetime.datetime.now(datetime.timezone.utc),
+                    component="rules",
+                    event_type="rule.registered",
+                    level="info",
+                    message=f"Declarative rule registered: '{r.title}' (status: {r.status}, detector: {r.target_detector})",
+                    tenant_id=r.tenant_id,
+                    metadata={"status": r.status, "target_detector": r.target_detector}
+                ))
+                existing_ids.add(eid)
+    except Exception:
+        pass
+
+    audit_events.sort(key=lambda x: x.timestamp, reverse=True)
+    return audit_events[:limit]
 
 
 @router.get("/events/stream")
