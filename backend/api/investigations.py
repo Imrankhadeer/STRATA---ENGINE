@@ -24,6 +24,7 @@ from backend.schemas.investigation import (
     InvestigationFinding,
     Hypothesis,
     CandidateDetectorRule,
+    EvidenceCitation,
 )
 from backend.ops.bus import ops_bus
 
@@ -721,6 +722,74 @@ async def stream_investigate_finding(
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+def _to_investigation_finding(report: InvestigationReport) -> InvestigationFinding:
+    """
+    Safely reconstructs an InvestigationFinding schema from an InvestigationReport DB record.
+    Guarantees resilient fallback defaults so unexpected or malformed DB data never raises a 500 error.
+    """
+    safe_hypotheses = []
+    for h in (report.hypotheses or []):
+        if isinstance(h, dict):
+            try:
+                evs = []
+                for ev in h.get("supporting_evidence", []):
+                    if isinstance(ev, dict):
+                        evs.append(
+                            EvidenceCitation(
+                                event_id=str(ev.get("event_id", "evt-unknown")),
+                                service_id=str(ev.get("service_id", "service-unknown")),
+                                timestamp=str(ev.get("timestamp", "")),
+                                relevance=str(ev.get("relevance", "")),
+                            )
+                        )
+                safe_hypotheses.append(
+                    Hypothesis(
+                        hypothesis_id=str(h.get("hypothesis_id", str(uuid.uuid4())[:8])),
+                        title=str(h.get("title", "Hypothesis")),
+                        description=str(h.get("description", "")),
+                        likelihood=str(h.get("likelihood", "medium")),
+                        nature=str(h.get("nature", "malicious")),
+                        supporting_evidence=evs,
+                    )
+                )
+            except Exception:
+                pass
+        elif isinstance(h, str):
+            safe_hypotheses.append(Hypothesis(title=h[:60], description=h))
+
+    safe_candidate_rules = []
+    for cr in (report.candidate_rules or []):
+        if isinstance(cr, dict):
+            try:
+                safe_candidate_rules.append(
+                    CandidateDetectorRule(
+                        rule_id=str(cr.get("rule_id", f"candidate.{uuid.uuid4().hex[:8]}")),
+                        title=str(cr.get("title", "Candidate Rule")),
+                        description=str(cr.get("description", "")),
+                        logic_type=str(cr.get("logic_type", "threshold")),
+                        proposed_thresholds=cr.get("proposed_thresholds", {}) if isinstance(cr.get("proposed_thresholds"), dict) else {},
+                        rationale=str(cr.get("rationale", "Proposed candidate rule")),
+                        status=str(cr.get("status", "proposed")),
+                    )
+                )
+            except Exception:
+                pass
+
+    return InvestigationFinding(
+        investigation_id=report.investigation_id,
+        finding_id=report.finding_id,
+        tenant_id=report.tenant_id,
+        verdict=str(report.verdict or "inconclusive"),
+        summary=report.summary or "",
+        hypotheses=safe_hypotheses,
+        candidate_rules=safe_candidate_rules,
+        recommended_mitigations=list(report.recommended_mitigations or []),
+        investigator_provider=report.investigator_provider or "muse",
+        investigator_model=report.investigator_model or "muse-spark-1.3",
+        completed_at=report.created_at or datetime.datetime.now(datetime.timezone.utc),
+    )
+
+
 @router.get("", response_model=List[InvestigationFinding])
 async def list_investigations(
     limit: int = Query(50, ge=1, le=200, description="Max reports to return"),
@@ -740,22 +809,7 @@ async def list_investigations(
         .limit(limit)
         .all()
     )
-    return [
-        InvestigationFinding(
-            investigation_id=r.investigation_id,
-            finding_id=r.finding_id,
-            tenant_id=r.tenant_id,
-            verdict=r.verdict,
-            summary=r.summary,
-            hypotheses=[Hypothesis(**h) for h in (r.hypotheses or [])],
-            candidate_rules=[CandidateDetectorRule(**cr) for cr in (r.candidate_rules or [])],
-            recommended_mitigations=r.recommended_mitigations or [],
-            investigator_provider=r.investigator_provider,
-            investigator_model=r.investigator_model,
-            completed_at=r.created_at,
-        )
-        for r in reports
-    ]
+    return [_to_investigation_finding(r) for r in reports]
 
 
 @router.get("/finding/{finding_id}", response_model=List[InvestigationFinding])
@@ -787,22 +841,7 @@ async def list_investigations_for_finding(
         InvestigationReport.finding_id == finding_id
     ).order_by(InvestigationReport.created_at.desc()).all()
 
-    return [
-        InvestigationFinding(
-            investigation_id=r.investigation_id,
-            finding_id=r.finding_id,
-            tenant_id=r.tenant_id,
-            verdict=r.verdict,
-            summary=r.summary,
-            hypotheses=[Hypothesis(**h) for h in (r.hypotheses or [])],
-            candidate_rules=[CandidateDetectorRule(**cr) for cr in (r.candidate_rules or [])],
-            recommended_mitigations=r.recommended_mitigations or [],
-            investigator_provider=r.investigator_provider,
-            investigator_model=r.investigator_model,
-            completed_at=r.created_at,
-        )
-        for r in reports
-    ]
+    return [_to_investigation_finding(r) for r in reports]
 
 
 
@@ -832,19 +871,7 @@ async def get_investigation_report(
             detail="Forbidden: Access to another tenant's investigation report is denied.",
         )
 
-    return InvestigationFinding(
-        investigation_id=db_report.investigation_id,
-        finding_id=db_report.finding_id,
-        tenant_id=db_report.tenant_id,
-        verdict=db_report.verdict,
-        summary=db_report.summary,
-        hypotheses=[Hypothesis(**h) for h in (db_report.hypotheses or [])],
-        candidate_rules=[CandidateDetectorRule(**r) for r in (db_report.candidate_rules or [])],
-        recommended_mitigations=db_report.recommended_mitigations or [],
-        investigator_provider=db_report.investigator_provider,
-        investigator_model=db_report.investigator_model,
-        completed_at=db_report.created_at,
-    )
+    return _to_investigation_finding(db_report)
 
 
 
@@ -941,8 +968,8 @@ async def update_investigation_disposition(
     mitigations.append(f"Analyst Disposition: {payload.disposition.upper()} by {auth.tenant_id} - {payload.reason}")
     report.recommended_mitigations = mitigations
 
-    # If linked to a real finding, sync the finding status as well
-    if report.finding_id and not report.finding_id.startswith("query-"):
+    # If linked to a finding, sync the finding status as well
+    if report.finding_id:
         finding = db.query(SecurityFinding).filter(
             SecurityFinding.finding_id == report.finding_id,
             SecurityFinding.tenant_id == auth.tenant_id,
@@ -964,19 +991,7 @@ async def update_investigation_disposition(
     db.commit()
     db.refresh(report)
 
-    return InvestigationFinding(
-        investigation_id=report.investigation_id,
-        finding_id=report.finding_id,
-        tenant_id=report.tenant_id,
-        verdict=report.verdict,
-        summary=report.summary,
-        hypotheses=[Hypothesis(**h) for h in (report.hypotheses or [])],
-        candidate_rules=[CandidateDetectorRule(**cr) for cr in (report.candidate_rules or [])],
-        recommended_mitigations=report.recommended_mitigations or [],
-        investigator_provider=report.investigator_provider,
-        investigator_model=report.investigator_model,
-        completed_at=report.created_at,
-    )
+    return _to_investigation_finding(report)
 
 
 class InvestigationRatingRequest(BaseModel):

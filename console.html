@@ -773,36 +773,106 @@ td { font-size: 12px; padding: 11px 13px; }
   color: var(--lime) !important;
   box-shadow: 0 0 12px rgba(34, 197, 94, 0.35) !important;
 }
-.row-actions .btn-fp {
-  border: 1px solid #713b3b;
-  color: #ff9a9a;
-  background: #201313;
+/* Sleek Modern Cyber Buttons for Triage & Row Actions */
+.btn-fp, .row-actions .btn-fp {
+  height: 32px !important;
+  padding: 0 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  border: 1px solid rgba(248, 113, 113, 0.35) !important;
+  color: #f87171 !important;
+  background: rgba(36, 18, 18, 0.85) !important;
+  cursor: pointer !important;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-.row-actions .btn-fp:hover {
-  background: #361717;
-  border-color: #a84848;
+.btn-fp:hover, .row-actions .btn-fp:hover {
+  background: #451a1a !important;
+  border-color: #f87171 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 14px rgba(248, 113, 113, 0.4) !important;
 }
-.row-actions .btn-resolve {
+
+.btn-resolve, .row-actions .btn-resolve {
+  height: 32px !important;
+  padding: 0 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
   background: rgba(19, 45, 25, 0.85) !important;
   color: #4ade80 !important;
   border: 1px solid rgba(74, 222, 128, 0.4) !important;
+  cursor: pointer !important;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-.row-actions .btn-resolve:hover {
+.btn-resolve:hover, .row-actions .btn-resolve:hover {
   background: #14532d !important;
   border-color: #4ade80 !important;
   color: #ffffff !important;
-  box-shadow: 0 0 12px rgba(74, 222, 128, 0.35) !important;
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.4) !important;
 }
-.row-actions .btn-reopen {
+
+.btn-reopen, .row-actions .btn-reopen {
+  height: 32px !important;
+  padding: 0 14px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
   background: rgba(30, 41, 59, 0.7) !important;
   color: #94a3b8 !important;
-  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+  border: 1px solid rgba(148, 163, 184, 0.28) !important;
+  cursor: pointer !important;
+  transition: all 0.16s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
-.row-actions .btn-reopen:hover {
-  background: rgba(51, 65, 85, 0.85) !important;
+.btn-reopen:hover, .row-actions .btn-reopen:hover {
+  background: rgba(51, 65, 85, 0.9) !important;
   border-color: #cbd5e1 !important;
   color: #f8fafc !important;
-  box-shadow: 0 0 8px rgba(148, 163, 184, 0.3) !important;
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.35) !important;
+}
+
+.btn-rate {
+  height: 29px !important;
+  padding: 0 12px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 6px !important;
+  background: rgba(20, 28, 23, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #cbd5e1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease-in-out !important;
+}
+.btn-rate:hover {
+  background: rgba(34, 197, 94, 0.14) !important;
+  border-color: rgba(74, 222, 128, 0.45) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.2) !important;
+}
+.btn-rate.active {
+  background: #14532d !important;
+  border-color: #4ade80 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.35) !important;
+  font-weight: 600 !important;
 }
 
 .topology-fullscreen {
@@ -1858,9 +1928,9 @@ async function inspectFinding(findingId) {
         <div class="row" style="flex-wrap:wrap;gap:8px">
           <button class="btn primary" data-action="run-investigation" data-id="${esc(f.finding_id)}">⌘ Trigger Deep Investigation</button>
           <button class="btn" data-action="plan-defense-finding" data-id="${esc(f.finding_id)}" style="border-color:var(--lime);color:var(--lime)">⛨ Plan Containment Action</button>
-          <button class="btn" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="resolved">✓ Resolve</button>
-          <button class="btn danger" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="false_positive">✕ Mark False Positive</button>
-          <button class="btn ghost" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="open">↺ Reopen</button>
+          <button class="btn btn-resolve" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="resolved">✓ Resolve</button>
+          <button class="btn btn-fp" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="false_positive">✕ False Positive</button>
+          <button class="btn btn-reopen" data-action="feedback-finding" data-id="${esc(f.finding_id)}" data-status="open">↺ Reopen</button>
         </div>
       </div>
     `;
@@ -1891,23 +1961,28 @@ async function sendFindingFeedback(findingId, newStatus, invId = null) {
   render();
 
   try {
-    // If an invId is provided, update the investigation report disposition in PostgreSQL
+    let saved = false;
+    // 1. If an invId is provided, update the investigation report disposition in PostgreSQL
     if (invId) {
       await request(`/api/v1/investigations/${encodeURIComponent(invId)}/disposition`, {
         method: 'POST',
         body: { disposition: newStatus, reason: `Marked as ${newStatus} by analyst via Control Room` }
-      }).catch(() => {});
+      });
+      saved = true;
     }
 
+    // 2. If a non-query finding ID is present, also synchronize finding feedback in PostgreSQL
     if (findingId && !findingId.startsWith('query-')) {
       await request(`/api/v1/findings/${encodeURIComponent(findingId)}/feedback`, {
         method: 'POST',
         body: { status: newStatus, reason: `Status updated to ${newStatus} via Control Room console.` }
       });
-    } else if (invId) {
-      await request(`/api/v1/investigations/${encodeURIComponent(invId)}/disposition`, {
+      saved = true;
+    } else if (findingId && !saved) {
+      // Query finding without invId
+      await request(`/api/v1/findings/${encodeURIComponent(findingId)}/feedback`, {
         method: 'POST',
-        body: { disposition: newStatus, reason: `Query investigation disposition set to ${newStatus}` }
+        body: { status: newStatus, reason: `Query status updated to ${newStatus} via Control Room console.` }
       });
     }
 
@@ -1933,17 +2008,7 @@ async function rateInvestigation(invId, rating) {
   
   // Highlight clicked button immediately in DOM
   document.querySelectorAll(`[data-action="rate-investigation"][data-id="${invId}"]`).forEach(btn => {
-    if (btn.dataset.rating === rating) {
-      btn.style.borderColor = 'var(--lime)';
-      btn.style.color = '#15200e';
-      btn.style.background = 'var(--lime)';
-      btn.style.fontWeight = '700';
-    } else {
-      btn.style.borderColor = '';
-      btn.style.color = '';
-      btn.style.background = '';
-      btn.style.fontWeight = '';
-    }
+    btn.classList.toggle('active', btn.dataset.rating === rating);
   });
 
   try {
@@ -2090,10 +2155,10 @@ function investigations() {
       <aside class="panel ref-deep-side"><div class="panelhead"><div><h3>Investigation details</h3><small>Model provenance and review state</small></div></div><div class="pad"><div class="eyebrow">MODEL</div><b style="font-size:12px">${esc(selected?.investigator_model||invMeta.model||'Meta Muse Spark')}</b><p class="tiny dim">${esc(selected?.investigator_provider||invMeta.provider||'Meta')}</p><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">SOURCE FINDING</div><b class="tiny">${esc(selected?.finding_id||'Not linked')}</b></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px">
   <div class="eyebrow">ANALYST DISPOSITION</div>
   ${selected ? `
-    <div class="stack" style="gap:6px;margin-top:6px">
-      <button class="btn small" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green);width:100%">✓ Resolve</button>
-      <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="false_positive" style="width:100%">✕ False Positive</button>
-      <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="open" style="width:100%">↺ Reopen</button>
+    <div class="stack" style="gap:7px;margin-top:8px">
+      <button class="btn btn-resolve" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="resolved" style="width:100%">✓ Resolve</button>
+      <button class="btn btn-fp" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="false_positive" style="width:100%">✕ False Positive</button>
+      <button class="btn btn-reopen" data-action="feedback-finding" data-id="${esc(selected.finding_id || '')}" data-inv-id="${esc(selected.investigation_id)}" data-status="open" style="width:100%">↺ Reopen</button>
     </div>
   ` : '<p class="tiny dim">Select an investigation to triage</p>'}
 </div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">CANDIDATE DETECTIONS</div><b style="font-size:21px">${candidates.length}</b><p class="tiny dim">Proposals only · review and validate before activation</p><button class="btn small" data-page="rules">Open Rule Registry →</button></div><div style="border-top:1px solid var(--line);margin:12px 0;padding-top:11px"><div class="eyebrow">NEXT STEP</div><p class="tiny muted">Review evidence, inspect hypotheses, then validate candidate rules in Replay & Validation.</p><button class="btn small" data-page="coverage">Open Replay & Validation →</button></div></div></aside>
@@ -2139,28 +2204,26 @@ async function viewInvestigationReport(investigationId) {
           <b>Executive Summary</b>
           <p class="muted" style="margin:6px 0 0;font-size:11px;line-height:1.6">${esc(rep.summary)}</p>
         </div>
-        <div class="panel pad" style="margin-top:10px;background:var(--panel2);border-color:#334d38">
-          <div class="between" style="margin-bottom:8px">
+        <div class="panel pad triage-panel" style="margin-top:10px;background:var(--panel2);border:1px solid #233827;border-radius:10px">
+          <div class="between" style="margin-bottom:10px;align-items:flex-start">
             <div>
-              <b style="color:var(--text-main);font-size:12px">Analyst Disposition & Finding Triage</b>
-              <div class="tiny muted">Update underlying security finding status based on investigated evidence</div>
+              <b style="color:var(--text-main);font-size:12px;display:flex;align-items:center;gap:6px">
+                <span style="color:var(--lime);font-size:13px">🛡️</span> Analyst Disposition &amp; Finding Triage
+              </b>
+              <div class="tiny muted" style="margin-top:2px">Update underlying security finding status based on investigated evidence</div>
             </div>
-            ${rep.finding_id ? `<span class="pill tiny neutral">Finding: ${esc(rep.finding_id)}</span>` : ''}
+            ${rep.finding_id ? `<span class="pill tiny mono" style="background:#132418;border-color:#2a4a32;color:#a3e635">Finding: ${esc(rep.finding_id)}</span>` : ''}
           </div>
-          <div class="row" style="gap:8px;flex-wrap:wrap">
-            ${rep.finding_id ? `
-              <button class="btn small" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="resolved" style="background:#13331b;border-color:#3e5833;color:var(--green)">✓ Resolve</button>
-              <button class="btn small danger ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="false_positive">✕ Mark False Positive</button>
-              <button class="btn small ghost" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="open">↺ Reopen Finding</button>
-            ` : `
-              <span class="tiny dim">Report is a query investigation (not directly bound to a finding ID).</span>
-            `}
+          <div class="triage-btn-group" style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-resolve" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="resolved" title="Resolve finding/investigation">✓ Resolve</button>
+            <button class="btn btn-fp" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="false_positive" title="Mark as false positive">✕ False Positive</button>
+            <button class="btn btn-reopen" data-action="feedback-finding" data-id="${esc(rep.finding_id || '')}" data-inv-id="${esc(rep.investigation_id)}" data-status="open" title="Reopen finding/investigation">↺ Reopen</button>
           </div>
-          <div class="row" style="gap:6px;margin-top:10px;padding-top:8px;border-top:1px solid var(--line);align-items:center">
-            <span class="tiny dim">Report Quality Rating:</span>
-            <button class="btn small ghost" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="accurate" title="Rate as accurate and grounded">👍 Accurate</button>
-            <button class="btn small ghost" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="partial" title="Rate as partially helpful">⚖️ Partial</button>
-            <button class="btn small ghost" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="inaccurate" title="Rate as inaccurate">👎 Inaccurate</button>
+          <div class="triage-rating-row" style="display:flex;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.07);align-items:center;flex-wrap:wrap">
+            <span class="tiny dim" style="font-weight:600;letter-spacing:0.02em">Report Quality Rating:</span>
+            <button class="btn btn-rate ${rep.quality_rating === 'accurate' ? 'active' : ''}" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="accurate" title="Rate as accurate and grounded">👍 Accurate</button>
+            <button class="btn btn-rate ${rep.quality_rating === 'partial' ? 'active' : ''}" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="partial" title="Rate as partially helpful">⚖️ Partial</button>
+            <button class="btn btn-rate ${rep.quality_rating === 'inaccurate' ? 'active' : ''}" data-action="rate-investigation" data-id="${esc(rep.investigation_id)}" data-rating="inaccurate" title="Rate as inaccurate">👎 Inaccurate</button>
           </div>
         </div>
 

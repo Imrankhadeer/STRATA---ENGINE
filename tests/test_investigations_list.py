@@ -94,3 +94,63 @@ def test_list_investigations_tenant_isolated(client, auth_headers, seed_investig
     assert data[0]["tenant_id"] == TEST_TENANT_ID
     assert data[0]["verdict"] == "confirmed_threat"
     assert len(data[0]["hypotheses"]) == 1
+
+
+def test_investigation_disposition_resolved(client, auth_headers, seed_investigations):
+    res = client.post(
+        "/api/v1/investigations/inv-rep-001/disposition",
+        headers=auth_headers,
+        json={"disposition": "resolved", "reason": "Analyst verified clean"}
+    )
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["verdict"] == "resolved"
+
+    # Verify GET returns resolved without 500 validation error
+    get_res = client.get("/api/v1/investigations/inv-rep-001", headers=auth_headers)
+    assert get_res.status_code == 200
+    assert get_res.json()["verdict"] == "resolved"
+
+
+def test_investigation_disposition_query_finding(client, auth_headers, db_session):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    # SecurityFinding must exist due to foreign key constraint
+    sf = SecurityFinding(
+        finding_id="query-377f344a",
+        tenant_id=TEST_TENANT_ID,
+        detector_id="investigator.deep_search",
+        detector_version="1.0.0",
+        title="AI Deep Search: query-377f344a",
+        severity="info",
+        confidence="high",
+        description="Query finding",
+        evidence={},
+        status="open",
+        created_at=now,
+    )
+    db_session.add(sf)
+    db_session.commit()
+
+    q_rep = InvestigationReport(
+        investigation_id="inv-query-999",
+        finding_id="query-377f344a",
+        tenant_id=TEST_TENANT_ID,
+        verdict="inconclusive",
+        summary="Query investigation report.",
+        hypotheses=[{"title": "Some partial hypothesis"}],
+        candidate_rules=[{"title": "Some partial candidate rule"}],
+        recommended_mitigations=[],
+        investigator_provider="muse",
+        investigator_model="muse-spark-1.3",
+        created_at=now,
+    )
+    db_session.add(q_rep)
+    db_session.commit()
+
+    res = client.post(
+        "/api/v1/investigations/inv-query-999/disposition",
+        headers=auth_headers,
+        json={"disposition": "false_positive", "reason": "Query dismissed"}
+    )
+    assert res.status_code == 200, res.text
+    assert res.json()["verdict"] == "likely_benign"

@@ -11,28 +11,28 @@ import uuid
 class EvidenceCitation(BaseModel):
     event_id: str
     service_id: str
-    timestamp: str
-    relevance: str
+    timestamp: str = ""
+    relevance: str = ""
 
 
 class Hypothesis(BaseModel):
     hypothesis_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
-    title: str
-    description: str
-    likelihood: Literal["low", "medium", "high"]
-    nature: Literal["benign", "malicious"]
+    title: str = "Hypothesis"
+    description: str = ""
+    likelihood: str = "medium"
+    nature: str = "malicious"
     supporting_evidence: List[EvidenceCitation] = Field(default_factory=list)
 
 
 class CandidateDetectorRule(BaseModel):
     rule_id: str = Field(default_factory=lambda: f"candidate.{uuid.uuid4().hex[:8]}")
-    title: str
-    description: str
-    logic_type: Literal["sequence", "threshold", "attribute_match"]
+    title: str = "Candidate Rule"
+    description: str = ""
+    logic_type: str = "threshold"
     proposed_thresholds: Dict[str, Any] = Field(default_factory=dict)
-    rationale: str
+    rationale: str = "Proposed candidate rule"
     # Safety invariant: Candidate detectors are strictly proposals until validated
-    status: Literal["proposed", "shadow_evaluating", "rejected", "promoted"] = "proposed"
+    status: str = "proposed"
 
 
 class InvestigationContext(BaseModel):
@@ -51,7 +51,7 @@ class InvestigationFinding(BaseModel):
     investigation_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     finding_id: str
     tenant_id: str
-    verdict: Literal["confirmed_threat", "likely_benign", "inconclusive"]
+    verdict: str = "inconclusive"
     summary: str
     hypotheses: List[Hypothesis] = Field(default_factory=list)
     candidate_rules: List[CandidateDetectorRule] = Field(default_factory=list)
