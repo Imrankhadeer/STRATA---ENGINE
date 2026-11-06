@@ -47,6 +47,9 @@ redis_data/
 *.sqlite3
 *.db
 backup_*.json
+backups/
+*.sql
+*.sql.gz
 
 # Scratch and backup files
 apps/
